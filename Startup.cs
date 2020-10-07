@@ -20,6 +20,9 @@ namespace budgeteer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<PlaidSettings>(Configuration.GetSection("Plaid"));
+            // services.AddTransient<IPlaidService, PlaidService>();
+            services.AddHttpClient<IPlaidService, PlaidService>();
 
             services.AddControllersWithViews();
 
@@ -28,6 +31,8 @@ namespace budgeteer
             {
                 configuration.RootPath = "ClientApp/build";
             });
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
