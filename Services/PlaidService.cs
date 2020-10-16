@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Newtonsoft.Json;
 public interface IPlaidService
 {
     public Task<LinkResponse> GetLinkToken(TokenCreateDto body);
+    public Task<TokenResponse> ExchangePublicToken(string publicToken);
 }
 
 public class PlaidService : IPlaidService
@@ -24,6 +26,8 @@ public class PlaidService : IPlaidService
 
     public async Task<LinkResponse> GetLinkToken(TokenCreateDto body)
     {
+        body.ClientId = _plaidSettings.ClientId;
+        body.ClientSecret = _plaidSettings.ClientSecret;
         var jsonBod = JsonConvert.SerializeObject(body);
         var requestBody = new StringContent(
         jsonBod,
@@ -34,5 +38,22 @@ public class PlaidService : IPlaidService
 
         var responseStream = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<LinkResponse>(responseStream);
+    }
+
+    public async Task<TokenResponse> ExchangePublicToken(string publicToken)
+    {
+        var body = new Dictionary<string, string>();
+        body["client_id"] = _plaidSettings.ClientId;
+        body["secret"] = _plaidSettings.ClientSecret;
+        body["public_token"] = publicToken;
+        var jsonBod = JsonConvert.SerializeObject(body);
+        var requestBody = new StringContent(
+            jsonBod,
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _client.PostAsync("/item/public_token/exchange", requestBody);
+        var responseStream = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<TokenResponse>(responseStream);
     }
 }

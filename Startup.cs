@@ -20,6 +20,8 @@ namespace budgeteer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSwaggerDocument();
+
             services.Configure<PlaidSettings>(Configuration.GetSection("Plaid"));
             // services.AddTransient<IPlaidService, PlaidService>();
             services.AddHttpClient<IPlaidService, PlaidService>();
@@ -48,6 +50,8 @@ namespace budgeteer
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+            app.UseOpenApi(); // serve documents (same as app.UseSwagger())
+            app.UseSwaggerUi3(); // serve Swagger UI
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

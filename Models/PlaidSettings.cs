@@ -30,7 +30,6 @@ public class TokenCreateDto
 
     [JsonProperty("products")]
     public IEnumerable<string> Products { get; set; }
-
 }
 
 public class User
