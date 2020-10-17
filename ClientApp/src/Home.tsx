@@ -4,7 +4,7 @@ import { usePlaidLink } from 'react-plaid-link'
 import { usePlaid } from './plaid/usePlaid'
 
 export const Home = () => {
-    const { token, exchangePublicToken, loading } = usePlaid()
+    const { linkToken: token, exchangePublicToken, loading } = usePlaid()
     const onSuccess = useCallback(exchangePublicToken, [])
 
     const config = {

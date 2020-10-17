@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PlaidApi } from './plaidApi'
-import { LinkResponse, TokenCreateDto, TokenResponse } from './plaidClient'
+import { LinkResponse, TokenCreateDto } from './plaidClient'
 import constate from 'constate'
 
 const useLoadPlaid = () => {
@@ -9,7 +9,7 @@ const useLoadPlaid = () => {
     }, [])
     const [loading, setLoading] = useState<boolean>(true)
     const [linkResponse, setLinkResponse] = useState<LinkResponse>()
-    const [tokenResponse, setTokenResponse] = useState<TokenResponse>()
+    const [accessToken, setAccessToken] = useState<string>()
 
     useEffect(() => {
         const loadData = async () => {
@@ -39,7 +39,7 @@ const useLoadPlaid = () => {
             console.log(token)
             console.log(metadata)
             const response = await api.exchangePublicToken(token)
-            setTokenResponse(response)
+            setAccessToken(response)
         } catch (error) {
             console.error()
         }
@@ -47,7 +47,8 @@ const useLoadPlaid = () => {
 
     return {
         loading: loading || !linkResponse,
-        token: linkResponse?.linkToken ?? '',
+        linkToken: linkResponse?.linkToken ?? '',
+        accessToken,
         exchangePublicToken,
     }
 }

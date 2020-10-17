@@ -16,8 +16,12 @@ import axios, {
 } from 'axios'
 
 export interface IPlaidClient {
+    getTransactions(
+        startDate: Date | undefined,
+        endDate: Date | undefined
+    ): Promise<FileResponse | null>
     getLinkToken(body: TokenCreateDto): Promise<LinkResponse>
-    exchangePublicToken(publicToken: string): Promise<TokenResponse>
+    exchangePublicToken(publicToken: string): Promise<string>
 }
 
 export class PlaidClient implements IPlaidClient {
@@ -33,6 +37,93 @@ export class PlaidClient implements IPlaidClient {
             baseUrl !== undefined && baseUrl !== null
                 ? baseUrl
                 : 'https://localhost:5001'
+    }
+
+    getTransactions(
+        startDate: Date | undefined,
+        endDate: Date | undefined,
+        cancelToken?: CancelToken | undefined
+    ): Promise<FileResponse | null> {
+        let url_ = this.baseUrl + '/api/v1/transactions?'
+        if (startDate === null)
+            throw new Error("The parameter 'startDate' cannot be null.")
+        else if (startDate !== undefined)
+            url_ +=
+                'startDate=' +
+                encodeURIComponent(startDate ? '' + startDate.toJSON() : '') +
+                '&'
+        if (endDate === null)
+            throw new Error("The parameter 'endDate' cannot be null.")
+        else if (endDate !== undefined)
+            url_ +=
+                'endDate=' +
+                encodeURIComponent(endDate ? '' + endDate.toJSON() : '') +
+                '&'
+        url_ = url_.replace(/[?&]$/, '')
+
+        let options_ = <AxiosRequestConfig>{
+            responseType: 'blob',
+            method: 'GET',
+            url: url_,
+            headers: {
+                Accept: 'application/octet-stream',
+            },
+            cancelToken,
+        }
+
+        return this.instance
+            .request(options_)
+            .catch((_error: any) => {
+                if (isAxiosError(_error) && _error.response) {
+                    return _error.response
+                } else {
+                    throw _error
+                }
+            })
+            .then((_response: AxiosResponse) => {
+                return this.processGetTransactions(_response)
+            })
+    }
+
+    protected processGetTransactions(
+        response: AxiosResponse
+    ): Promise<FileResponse | null> {
+        const status = response.status
+        let _headers: any = {}
+        if (response.headers && typeof response.headers === 'object') {
+            for (let k in response.headers) {
+                if (response.headers.hasOwnProperty(k)) {
+                    _headers[k] = response.headers[k]
+                }
+            }
+        }
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers
+                ? response.headers['content-disposition']
+                : undefined
+            const fileNameMatch = contentDisposition
+                ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition)
+                : undefined
+            const fileName =
+                fileNameMatch && fileNameMatch.length > 1
+                    ? fileNameMatch[1]
+                    : undefined
+            return Promise.resolve({
+                fileName: fileName,
+                status: status,
+                data: response.data as Blob,
+                headers: _headers,
+            })
+        } else if (status !== 200 && status !== 204) {
+            const _responseText = response.data
+            return throwException(
+                'An unexpected server error occurred.',
+                status,
+                _responseText,
+                _headers
+            )
+        }
+        return Promise.resolve<FileResponse | null>(<any>null)
     }
 
     getLinkToken(
@@ -85,8 +176,8 @@ export class PlaidClient implements IPlaidClient {
             const _responseText = response.data
             let result200: any = null
             let resultData200 = _responseText
-            // result200 = JSON.parse(resultData200)
-            return _responseText
+            result200 = JSON.parse(resultData200)
+            return result200
         } else if (status !== 200 && status !== 204) {
             const _responseText = response.data
             return throwException(
@@ -102,7 +193,7 @@ export class PlaidClient implements IPlaidClient {
     exchangePublicToken(
         publicToken: string,
         cancelToken?: CancelToken | undefined
-    ): Promise<TokenResponse> {
+    ): Promise<string> {
         let url_ = this.baseUrl + '/api/v1/token'
         url_ = url_.replace(/[?&]$/, '')
 
@@ -135,7 +226,7 @@ export class PlaidClient implements IPlaidClient {
 
     protected processExchangePublicToken(
         response: AxiosResponse
-    ): Promise<TokenResponse> {
+    ): Promise<string> {
         const status = response.status
         let _headers: any = {}
         if (response.headers && typeof response.headers === 'object') {
@@ -149,8 +240,8 @@ export class PlaidClient implements IPlaidClient {
             const _responseText = response.data
             let result200: any = null
             let resultData200 = _responseText
-            // result200 = JSON.parse(resultData200)
-            return _responseText
+            result200 = JSON.parse(resultData200)
+            return result200
         } else if (status !== 200 && status !== 204) {
             const _responseText = response.data
             return throwException(
@@ -160,7 +251,7 @@ export class PlaidClient implements IPlaidClient {
                 _headers
             )
         }
-        return Promise.resolve<TokenResponse>(<any>null)
+        return Promise.resolve<string>(<any>null)
     }
 }
 
@@ -184,10 +275,11 @@ export interface User {
     clientUserId?: string | undefined
 }
 
-export interface TokenResponse {
-    accessToken?: string | undefined
-    itemId?: string | undefined
-    requestId?: string | undefined
+export interface FileResponse {
+    data: Blob
+    status: number
+    fileName?: string
+    headers?: { [name: string]: any }
 }
 
 export class ApiException extends Error {

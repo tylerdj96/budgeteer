@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 public class TokenResponse
 {
-    [JsonProperty("link_token")]
+    [JsonProperty("access_token")]
     public string AccessToken { get; set; }
     [JsonProperty("item_id")]
     public string ItemId { get; set; }

@@ -17,6 +17,14 @@ namespace budgeteer.Controllers
             _plaidService = plaidService;
         }
 
+        [HttpGet]
+        [Route("transactions")]
+        public async Task<ActionResult<object>> GetTransactions([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var transactions = await _plaidService.FetchTransactions(startDate, endDate);
+            return transactions;
+        }
+
         [HttpPost]
         [Route("link")]
         public async Task<ActionResult<LinkResponse>> GetLinkToken([FromBody] TokenCreateDto body)
@@ -27,10 +35,10 @@ namespace budgeteer.Controllers
 
         [HttpPost]
         [Route("token")]
-        public async Task<ActionResult<TokenResponse>> ExchangePublicToken([FromBody] string publicToken)
+        public async Task<ActionResult<string>> ExchangePublicToken([FromBody] string publicToken)
         {
-            var tokenResponse = await _plaidService.ExchangePublicToken(publicToken);
-            return Ok(tokenResponse);
+            var token = await _plaidService.ExchangePublicToken(publicToken);
+            return token;
         }
     }
 }

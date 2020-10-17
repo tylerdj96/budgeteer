@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -25,6 +26,8 @@ namespace budgeteer
             services.Configure<PlaidSettings>(Configuration.GetSection("Plaid"));
             // services.AddTransient<IPlaidService, PlaidService>();
             services.AddHttpClient<IPlaidService, PlaidService>();
+            services.AddDbContext<PlaidContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("PlaidDatabase")));
 
             services.AddControllersWithViews();
 
@@ -33,7 +36,6 @@ namespace budgeteer
             {
                 configuration.RootPath = "ClientApp/build";
             });
-
 
         }
 
