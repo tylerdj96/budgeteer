@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public interface IPlaidService
 {
@@ -79,13 +80,16 @@ public class PlaidService : IPlaidService
 
     public async Task<object> FetchTransactions(DateTime startTime, DateTime endTime)
     {
-        var account = _context.Accounts.Where(acc => acc.Id == Guid.Parse("0363FD5B-534C-43AE-9032-F1B3D84E0733")).FirstOrDefault();
-        var body = new Dictionary<string, string>();
+        var account = _context.Accounts.Where(acc => acc.Id == Guid.Parse("FFA80A49-0976-482D-A1C5-8DF38BD83576")).FirstOrDefault();
+        var body = new Dictionary<string, object>();
         body["client_id"] = _plaidSettings.ClientId;
         body["secret"] = _plaidSettings.ClientSecret;
         body["access_token"] = account.AccessToken;
-        body["start_date"] = startTime.ToLongDateString();
-        body["end_date"] = endTime.ToLongDateString();
+        body["start_date"] = startTime.ToString("yyyy-MM-dd");
+        body["end_date"] = endTime.ToString("yyyy-MM-dd");
+        // var options = new { count = "250", offset = "200" };
+        // body["options"] = options;
+
 
         var jsonBod = JsonConvert.SerializeObject(body);
         var requestBody = new StringContent(
@@ -95,6 +99,9 @@ public class PlaidService : IPlaidService
 
         var response = await _client.PostAsync("/transactions/get", requestBody);
         var responseStream = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject(responseStream);
+        var test = JObject.Parse(responseStream);
+        return test;
+        // var test2 = test.Values();
+        // return test2;
     }
 }

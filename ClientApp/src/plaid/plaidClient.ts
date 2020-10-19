@@ -176,8 +176,7 @@ export class PlaidClient implements IPlaidClient {
             const _responseText = response.data
             let result200: any = null
             let resultData200 = _responseText
-            result200 = JSON.parse(resultData200)
-            return result200
+            return _responseText
         } else if (status !== 200 && status !== 204) {
             const _responseText = response.data
             return throwException(
@@ -240,8 +239,7 @@ export class PlaidClient implements IPlaidClient {
             const _responseText = response.data
             let result200: any = null
             let resultData200 = _responseText
-            result200 = JSON.parse(resultData200)
-            return result200
+            return _responseText
         } else if (status !== 200 && status !== 204) {
             const _responseText = response.data
             return throwException(

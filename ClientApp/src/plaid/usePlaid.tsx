@@ -10,9 +10,11 @@ const useLoadPlaid = () => {
     const [loading, setLoading] = useState<boolean>(true)
     const [linkResponse, setLinkResponse] = useState<LinkResponse>()
     const [accessToken, setAccessToken] = useState<string>()
+    const [transactions, setTransactions] = useState<any>()
 
     useEffect(() => {
         const loadData = async () => {
+            debugger
             setLoading(true)
             try {
                 const body: TokenCreateDto = {
@@ -41,7 +43,20 @@ const useLoadPlaid = () => {
             const response = await api.exchangePublicToken(token)
             setAccessToken(response)
         } catch (error) {
-            console.error()
+            console.error(error)
+        }
+    }
+
+    const getTransactions = async () => {
+        try {
+            const response = await api.getTransactions(
+                new Date('2020-06-06'),
+                new Date('2020-07-07')
+            )
+            debugger
+            console.log(response)
+        } catch (error) {
+            console.error(error)
         }
     }
 
@@ -50,6 +65,7 @@ const useLoadPlaid = () => {
         linkToken: linkResponse?.linkToken ?? '',
         accessToken,
         exchangePublicToken,
+        getTransactions,
     }
 }
 

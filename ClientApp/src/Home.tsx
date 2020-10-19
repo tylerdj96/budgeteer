@@ -4,7 +4,12 @@ import { usePlaidLink } from 'react-plaid-link'
 import { usePlaid } from './plaid/usePlaid'
 
 export const Home = () => {
-    const { linkToken: token, exchangePublicToken, loading } = usePlaid()
+    const {
+        linkToken: token,
+        exchangePublicToken,
+        loading,
+        getTransactions,
+    } = usePlaid()
     const onSuccess = useCallback(exchangePublicToken, [])
 
     const config = {
@@ -18,8 +23,13 @@ export const Home = () => {
     if (loading) return <Spinner animation="grow" />
 
     return (
-        <button onClick={() => open()} disabled={!ready}>
-            Connect a bank account
-        </button>
+        <div>
+            <button onClick={() => open()} disabled={!ready}>
+                Connect a bank account
+            </button>
+            <button onClick={() => getTransactions()} disabled={!ready}>
+                getTransactions
+            </button>
+        </div>
     )
 }

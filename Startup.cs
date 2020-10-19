@@ -26,6 +26,7 @@ namespace budgeteer
             services.Configure<PlaidSettings>(Configuration.GetSection("Plaid"));
             // services.AddTransient<IPlaidService, PlaidService>();
             services.AddHttpClient<IPlaidService, PlaidService>();
+            services.AddMvc().AddNewtonsoftJson();
             services.AddDbContext<PlaidContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("PlaidDatabase")));
 
