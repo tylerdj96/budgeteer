@@ -1,6 +1,8 @@
+import Axios from 'axios'
 import React, { useCallback } from 'react'
 import Spinner from 'react-bootstrap/esm/Spinner'
 import { usePlaidLink } from 'react-plaid-link'
+import { useOkta } from './core/common/hooks/useOkta'
 import { usePlaid } from './plaid/usePlaid'
 
 export const Home = () => {
@@ -10,6 +12,7 @@ export const Home = () => {
         loading,
         getTransactions,
     } = usePlaid()
+    const { userInfo, accessToken } = useOkta()
     const onSuccess = useCallback(exchangePublicToken, [])
 
     const config = {
@@ -24,6 +27,7 @@ export const Home = () => {
 
     return (
         <div>
+            Welcome back, {userInfo?.given_name}!
             <button onClick={() => open()} disabled={!ready}>
                 Connect a bank account
             </button>

@@ -1,5 +1,5 @@
-import { PlaidClient } from "./plaidClient"
+import { PlaidClient } from './plaidClient'
 
-export const PlaidApi = (baseUrl?: string) => {
-    return new PlaidClient(baseUrl);
+export const PlaidApi = (oktaToken: string, baseUrl?: string) => {
+    return new PlaidClient(oktaToken, baseUrl)
 }

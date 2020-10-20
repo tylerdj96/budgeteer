@@ -6,4 +6,5 @@ public class PlaidContext : DbContext
         : base(options)
     { }
     public DbSet<Account> Accounts { get; set; }
+    public DbSet<BudgeteerUser> BudgeteerUsers { get; set; }
 }

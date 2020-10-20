@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -21,14 +23,17 @@ public class PlaidService : IPlaidService
 {
     private readonly HttpClient _client;
     private readonly PlaidContext _context;
+    private readonly HttpContext _httpContext;
     public PlaidSettings _plaidSettings;
 
-    public PlaidService(HttpClient client, PlaidContext context, IOptions<PlaidSettings> plaidSettings)
+    public PlaidService(HttpClient client, PlaidContext context, IOptions<PlaidSettings> plaidSettings, IHttpContextAccessor httpContextAccessor)
     {
         client.BaseAddress = new Uri(plaidSettings.Value.BaseUrl);
         _plaidSettings = plaidSettings.Value;
         _client = client;
         _context = context;
+        _httpContext = httpContextAccessor.HttpContext;
+
     }
 
     public async Task<LinkResponse> GetLinkToken(TokenCreateDto body)
@@ -68,23 +73,36 @@ public class PlaidService : IPlaidService
 
     public async Task SaveAccessToken(TokenResponse response)
     {
-        _context.Add(new Account
+        var newAccount = new Account
         {
             Id = Guid.NewGuid(),
             AccessToken = response.AccessToken,
             ItemId = response.ItemId,
             RequestId = response.RequestId
-        });
+        };
+        _context.Accounts.Add(newAccount);
+        _context.BudgeteerUsers.Add(new BudgeteerUser
+        {
+            Id = Guid.NewGuid(),
+            OktaEmail = GetUserEmail(),
+            Account = newAccount
+        }
+        );
+
         await _context.SaveChangesAsync();
     }
 
     public async Task<object> FetchTransactions(DateTime startTime, DateTime endTime)
     {
-        var account = _context.Accounts.Where(acc => acc.Id == Guid.Parse("FFA80A49-0976-482D-A1C5-8DF38BD83576")).FirstOrDefault();
+        var userEmail = GetUserEmail();
+        var user = _context.BudgeteerUsers
+            .Include(bu => bu.Account)
+            .Where(bu => bu.OktaEmail == userEmail)
+            .FirstOrDefault();
         var body = new Dictionary<string, object>();
         body["client_id"] = _plaidSettings.ClientId;
         body["secret"] = _plaidSettings.ClientSecret;
-        body["access_token"] = account.AccessToken;
+        body["access_token"] = user.Account.AccessToken;
         body["start_date"] = startTime.ToString("yyyy-MM-dd");
         body["end_date"] = endTime.ToString("yyyy-MM-dd");
         // var options = new { count = "250", offset = "200" };
@@ -103,5 +121,11 @@ public class PlaidService : IPlaidService
         return test;
         // var test2 = test.Values();
         // return test2;
+    }
+
+    private string GetUserEmail()
+    {
+        var userClaim = _httpContext.User.Claims.Where(c => c.Type.Contains("nameidentifier")).FirstOrDefault();
+        return userClaim.Value;
     }
 }

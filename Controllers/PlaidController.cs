@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +11,8 @@ namespace budgeteer.Controllers
 {
     [ApiController]
     [Route("api/v1")]
+    [Authorize]
+    [EnableCors("AllowAll")]
     public class PlaidController : ControllerBase
     {
         public IPlaidService _plaidService { get; set; }

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace budgeteer.Migrations
 {
     [DbContext(typeof(PlaidContext))]
-    [Migration("20201016214416_InitialCreate")]
+    [Migration("20201020061028_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,6 +38,32 @@ namespace budgeteer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("BudgeteerUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OktaEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("BudgeteerUsers");
+                });
+
+            modelBuilder.Entity("BudgeteerUser", b =>
+                {
+                    b.HasOne("Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
                 });
 #pragma warning restore 612, 618
         }

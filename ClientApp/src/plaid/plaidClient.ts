@@ -19,7 +19,7 @@ export interface IPlaidClient {
     getTransactions(
         startDate: Date | undefined,
         endDate: Date | undefined
-    ): Promise<FileResponse | null>
+    ): Promise<any | null>
     getLinkToken(body: TokenCreateDto): Promise<LinkResponse>
     exchangePublicToken(publicToken: string): Promise<string>
 }
@@ -27,23 +27,22 @@ export interface IPlaidClient {
 export class PlaidClient implements IPlaidClient {
     private instance: AxiosInstance
     private baseUrl: string
-    protected jsonParseReviver:
-        | ((key: string, value: any) => any)
-        | undefined = undefined
+    private oktaToken: string
 
-    constructor(baseUrl?: string, instance?: AxiosInstance) {
+    constructor(oktaToken: string, baseUrl?: string, instance?: AxiosInstance) {
         this.instance = instance ? instance : axios.create()
         this.baseUrl =
             baseUrl !== undefined && baseUrl !== null
                 ? baseUrl
                 : 'https://localhost:5001'
+        this.oktaToken = oktaToken
     }
 
     getTransactions(
         startDate: Date | undefined,
         endDate: Date | undefined,
         cancelToken?: CancelToken | undefined
-    ): Promise<FileResponse | null> {
+    ): Promise<any | null> {
         let url_ = this.baseUrl + '/api/v1/transactions?'
         if (startDate === null)
             throw new Error("The parameter 'startDate' cannot be null.")
@@ -61,266 +60,106 @@ export class PlaidClient implements IPlaidClient {
                 '&'
         url_ = url_.replace(/[?&]$/, '')
 
-        let options_ = <AxiosRequestConfig>{
+        let options = <AxiosRequestConfig>{
             responseType: 'blob',
             method: 'GET',
             url: url_,
             headers: {
                 Accept: 'application/octet-stream',
+                Authorization: `Bearer ${this.oktaToken}`,
             },
             cancelToken,
         }
 
         return this.instance
-            .request(options_)
-            .catch((_error: any) => {
-                if (isAxiosError(_error) && _error.response) {
-                    return _error.response
-                } else {
-                    throw _error
-                }
+            .request(options)
+            .then((response: AxiosResponse) => {
+                return response.data
             })
-            .then((_response: AxiosResponse) => {
-                return this.processGetTransactions(_response)
+            .catch((error: any) => {
+                console.error(error)
             })
-    }
-
-    protected processGetTransactions(
-        response: AxiosResponse
-    ): Promise<FileResponse | null> {
-        const status = response.status
-        let _headers: any = {}
-        if (response.headers && typeof response.headers === 'object') {
-            for (let k in response.headers) {
-                if (response.headers.hasOwnProperty(k)) {
-                    _headers[k] = response.headers[k]
-                }
-            }
-        }
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers
-                ? response.headers['content-disposition']
-                : undefined
-            const fileNameMatch = contentDisposition
-                ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition)
-                : undefined
-            const fileName =
-                fileNameMatch && fileNameMatch.length > 1
-                    ? fileNameMatch[1]
-                    : undefined
-            return Promise.resolve({
-                fileName: fileName,
-                status: status,
-                data: response.data as Blob,
-                headers: _headers,
-            })
-        } else if (status !== 200 && status !== 204) {
-            const _responseText = response.data
-            return throwException(
-                'An unexpected server error occurred.',
-                status,
-                _responseText,
-                _headers
-            )
-        }
-        return Promise.resolve<FileResponse | null>(<any>null)
     }
 
     getLinkToken(
         body: TokenCreateDto,
         cancelToken?: CancelToken | undefined
     ): Promise<LinkResponse> {
-        let url_ = this.baseUrl + '/api/v1/link'
-        url_ = url_.replace(/[?&]$/, '')
+        let url = this.baseUrl + '/api/v1/link'
+        url = url.replace(/[?&]$/, '')
 
         const content_ = JSON.stringify(body)
 
-        let options_ = <AxiosRequestConfig>{
+        let options = <AxiosRequestConfig>{
             data: content_,
             method: 'POST',
-            url: url_,
+            url: url,
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
+                Authorization: `Bearer ${this.oktaToken}`,
             },
             cancelToken,
         }
 
         return this.instance
-            .request(options_)
-            .catch((_error: any) => {
-                if (isAxiosError(_error) && _error.response) {
-                    return _error.response
-                } else {
-                    throw _error
-                }
+            .request(options)
+            .then((response: AxiosResponse) => {
+                return response.data
             })
-            .then((_response: AxiosResponse) => {
-                return this.processGetLinkToken(_response)
+            .catch((error: any) => {
+                console.error(error)
             })
-    }
-
-    protected processGetLinkToken(
-        response: AxiosResponse
-    ): Promise<LinkResponse> {
-        const status = response.status
-        let _headers: any = {}
-        if (response.headers && typeof response.headers === 'object') {
-            for (let k in response.headers) {
-                if (response.headers.hasOwnProperty(k)) {
-                    _headers[k] = response.headers[k]
-                }
-            }
-        }
-        if (status === 200) {
-            const _responseText = response.data
-            let result200: any = null
-            let resultData200 = _responseText
-            return _responseText
-        } else if (status !== 200 && status !== 204) {
-            const _responseText = response.data
-            return throwException(
-                'An unexpected server error occurred.',
-                status,
-                _responseText,
-                _headers
-            )
-        }
-        return Promise.resolve<LinkResponse>(<any>null)
     }
 
     exchangePublicToken(
         publicToken: string,
         cancelToken?: CancelToken | undefined
     ): Promise<string> {
-        let url_ = this.baseUrl + '/api/v1/token'
-        url_ = url_.replace(/[?&]$/, '')
+        let url = this.baseUrl + '/api/v1/token'
+        url = url.replace(/[?&]$/, '')
 
         const content_ = JSON.stringify(publicToken)
 
-        let options_ = <AxiosRequestConfig>{
+        let options = <AxiosRequestConfig>{
             data: content_,
             method: 'POST',
-            url: url_,
+            url: url,
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
+                Authorization: `Bearer ${this.oktaToken}`,
             },
             cancelToken,
         }
 
         return this.instance
-            .request(options_)
-            .catch((_error: any) => {
-                if (isAxiosError(_error) && _error.response) {
-                    return _error.response
-                } else {
-                    throw _error
-                }
+            .request(options)
+            .then((response: AxiosResponse) => {
+                return response.data
             })
-            .then((_response: AxiosResponse) => {
-                return this.processExchangePublicToken(_response)
+            .catch((error: any) => {
+                console.error(error)
             })
-    }
-
-    protected processExchangePublicToken(
-        response: AxiosResponse
-    ): Promise<string> {
-        const status = response.status
-        let _headers: any = {}
-        if (response.headers && typeof response.headers === 'object') {
-            for (let k in response.headers) {
-                if (response.headers.hasOwnProperty(k)) {
-                    _headers[k] = response.headers[k]
-                }
-            }
-        }
-        if (status === 200) {
-            const _responseText = response.data
-            let result200: any = null
-            let resultData200 = _responseText
-            return _responseText
-        } else if (status !== 200 && status !== 204) {
-            const _responseText = response.data
-            return throwException(
-                'An unexpected server error occurred.',
-                status,
-                _responseText,
-                _headers
-            )
-        }
-        return Promise.resolve<string>(<any>null)
     }
 }
 
 export interface LinkResponse {
-    linkToken?: string | undefined
+    link_token?: string | undefined
     expiration?: string | undefined
-    requestId?: string | undefined
+    request_id?: string | undefined
 }
 
 export interface TokenCreateDto {
-    clientId?: string | undefined
-    clientSecret?: string | undefined
-    clientName?: string | undefined
-    countryCodes?: string[] | undefined
+    client_id?: string | undefined
+    secret?: string | undefined
+    client_name?: string | undefined
+    country_codes?: string[] | undefined
     language?: string | undefined
     user?: User | undefined
     products?: string[] | undefined
 }
 
 export interface User {
-    clientUserId?: string | undefined
-}
-
-export interface FileResponse {
-    data: Blob
-    status: number
-    fileName?: string
-    headers?: { [name: string]: any }
-}
-
-export class ApiException extends Error {
-    message: string
-    status: number
-    response: string
-    headers: { [key: string]: any }
-    result: any
-
-    constructor(
-        message: string,
-        status: number,
-        response: string,
-        headers: { [key: string]: any },
-        result: any
-    ) {
-        super()
-
-        this.message = message
-        this.status = status
-        this.response = response
-        this.headers = headers
-        this.result = result
-    }
-
-    protected isApiException = true
-
-    static isApiException(obj: any): obj is ApiException {
-        return obj.isApiException === true
-    }
-}
-
-function throwException(
-    message: string,
-    status: number,
-    response: string,
-    headers: { [key: string]: any },
-    result?: any
-): any {
-    if (result !== null && result !== undefined) throw result
-    else throw new ApiException(message, status, response, headers, null)
-}
-
-function isAxiosError(obj: any | undefined): obj is AxiosError {
-    return obj && obj.isAxiosError === true
+    client_user_id?: string | undefined
 }

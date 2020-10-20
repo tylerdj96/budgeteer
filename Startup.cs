@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Okta.AspNetCore;
 
 namespace budgeteer
 {
@@ -24,11 +25,37 @@ namespace budgeteer
             services.AddSwaggerDocument();
 
             services.Configure<PlaidSettings>(Configuration.GetSection("Plaid"));
-            // services.AddTransient<IPlaidService, PlaidService>();
+
             services.AddHttpClient<IPlaidService, PlaidService>();
+            services.AddHttpContextAccessor();
+
             services.AddMvc().AddNewtonsoftJson();
+
             services.AddDbContext<PlaidContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("PlaidDatabase")));
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = OktaDefaults.ApiAuthenticationScheme;
+                options.DefaultChallengeScheme = OktaDefaults.ApiAuthenticationScheme;
+                options.DefaultSignInScheme = OktaDefaults.ApiAuthenticationScheme;
+            })
+            .AddOktaWebApi(new OktaWebApiOptions()
+            {
+                OktaDomain = Configuration["Okta:OktaDomain"],
+            });
+
+            services.AddAuthorization();
+
+            services.AddCors(options =>
+            {
+                // The CORS policy is open for testing purposes. In a production application, you should restrict it to known origins.
+                options.AddPolicy(
+                    "AllowAll",
+                    builder => builder.AllowAnyOrigin()
+                                    .AllowAnyMethod()
+                                    .AllowAnyHeader());
+            });
 
             services.AddControllersWithViews();
 
@@ -61,6 +88,12 @@ namespace budgeteer
             app.UseSpaStaticFiles();
 
             app.UseRouting();
+
+            app.UseAuthentication();
+
+            app.UseAuthorization();
+
+            app.UseCors();
 
             app.UseEndpoints(endpoints =>
             {

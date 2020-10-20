@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { PlaidApi } from './plaidApi'
 import { LinkResponse, TokenCreateDto } from './plaidClient'
 import constate from 'constate'
+import { useOkta } from '../core/common/hooks/useOkta'
 
 const useLoadPlaid = () => {
+    const { accessToken: oktaToken } = useOkta()
     const api = useMemo(() => {
-        return PlaidApi()
+        return PlaidApi(oktaToken)
     }, [])
     const [loading, setLoading] = useState<boolean>(true)
     const [linkResponse, setLinkResponse] = useState<LinkResponse>()
@@ -14,15 +16,14 @@ const useLoadPlaid = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            debugger
             setLoading(true)
             try {
                 const body: TokenCreateDto = {
-                    clientName: 'My client Name',
-                    countryCodes: ['US'],
+                    client_name: 'My client Name',
+                    country_codes: ['US'],
                     language: 'en',
                     user: {
-                        clientUserId: 'tyleruniqueuserid',
+                        client_user_id: 'tyleruniqueuserid',
                     },
                     products: ['auth'],
                 }
@@ -53,7 +54,6 @@ const useLoadPlaid = () => {
                 new Date('2020-06-06'),
                 new Date('2020-07-07')
             )
-            debugger
             console.log(response)
         } catch (error) {
             console.error(error)
@@ -62,7 +62,7 @@ const useLoadPlaid = () => {
 
     return {
         loading: loading || !linkResponse,
-        linkToken: linkResponse?.linkToken ?? '',
+        linkToken: linkResponse?.link_token ?? '',
         accessToken,
         exchangePublicToken,
         getTransactions,
