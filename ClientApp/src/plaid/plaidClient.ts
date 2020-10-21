@@ -43,29 +43,29 @@ export class PlaidClient implements IPlaidClient {
         endDate: Date | undefined,
         cancelToken?: CancelToken | undefined
     ): Promise<any | null> {
-        let url_ = this.baseUrl + '/api/v1/transactions?'
+        let url = this.baseUrl + '/api/v1/transactions?'
         if (startDate === null)
             throw new Error("The parameter 'startDate' cannot be null.")
         else if (startDate !== undefined)
-            url_ +=
+            url +=
                 'startDate=' +
                 encodeURIComponent(startDate ? '' + startDate.toJSON() : '') +
                 '&'
         if (endDate === null)
             throw new Error("The parameter 'endDate' cannot be null.")
         else if (endDate !== undefined)
-            url_ +=
+            url +=
                 'endDate=' +
                 encodeURIComponent(endDate ? '' + endDate.toJSON() : '') +
                 '&'
-        url_ = url_.replace(/[?&]$/, '')
+        url = url.replace(/[?&]$/, '')
 
         let options = <AxiosRequestConfig>{
-            responseType: 'blob',
             method: 'GET',
-            url: url_,
+            url,
             headers: {
-                Accept: 'application/octet-stream',
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
                 Authorization: `Bearer ${this.oktaToken}`,
             },
             cancelToken,

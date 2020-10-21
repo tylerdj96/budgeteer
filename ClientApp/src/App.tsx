@@ -5,10 +5,12 @@ import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { CALLBACK_PATH, config } from './core/config'
 import { Security, LoginCallback, SecureRoute } from '@okta/okta-react'
 import { Login } from './Login'
+import { ReactQueryDevtools } from 'react-query-devtools'
 
 function App() {
     return (
         <Router>
+            <ReactQueryDevtools initialIsOpen={false} />
             <Security {...config}>
                 <Route path={CALLBACK_PATH} component={LoginCallback} />
                 <SecureRoute exact={true} path={'/'}>

@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PlaidApi } from './plaidApi'
 import { LinkResponse, TokenCreateDto } from './plaidClient'
 import constate from 'constate'
 import { useOkta } from '../core/common/hooks/useOkta'
+import { Transactions } from '../core/models/Transactions'
+import { usePlaidLink } from 'react-plaid-link'
 
 const useLoadPlaid = () => {
     const { accessToken: oktaToken } = useOkta()
     const api = useMemo(() => {
         return PlaidApi(oktaToken)
     }, [])
-    const [loading, setLoading] = useState<boolean>(true)
+    const [loading, setLoading] = useState<boolean>(false)
     const [linkResponse, setLinkResponse] = useState<LinkResponse>()
-    const [accessToken, setAccessToken] = useState<string>()
-    const [transactions, setTransactions] = useState<any>()
 
     useEffect(() => {
-        const loadData = async () => {
+        const getLinkToken = async () => {
             setLoading(true)
             try {
                 const body: TokenCreateDto = {
@@ -34,36 +34,37 @@ const useLoadPlaid = () => {
             }
             setLoading(false)
         }
-        loadData()
+
+        getLinkToken()
     }, [])
 
     const exchangePublicToken = async (token: string, metadata: any) => {
         try {
-            console.log(token)
-            console.log(metadata)
             const response = await api.exchangePublicToken(token)
-            setAccessToken(response)
         } catch (error) {
             console.error(error)
         }
     }
 
     const getTransactions = async () => {
-        try {
-            const response = await api.getTransactions(
-                new Date('2020-06-06'),
-                new Date('2020-07-07')
-            )
-            console.log(response)
-        } catch (error) {
-            console.error(error)
-        }
+        return await api.getTransactions(
+            new Date('2020-06-06'),
+            new Date('2020-07-07')
+        )
     }
-
+    const onSuccess = useCallback(exchangePublicToken, [])
+    const config = {
+        token: linkResponse?.link_token ?? '',
+        onSuccess,
+        // ...
+    }
+    const { open: openPlaid, ready, error } = usePlaidLink(config)
     return {
-        loading: loading || !linkResponse,
+        loading,
         linkToken: linkResponse?.link_token ?? '',
-        accessToken,
+        openPlaid,
+        ready: ready && !!linkResponse?.link_token,
+        error,
         exchangePublicToken,
         getTransactions,
     }
