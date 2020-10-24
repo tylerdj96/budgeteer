@@ -5,6 +5,7 @@ import constate from 'constate'
 import { useOkta } from '../core/common/hooks/useOkta'
 import { Transactions } from '../core/models/Transactions'
 import { usePlaidLink } from 'react-plaid-link'
+import { useQuery } from 'react-query'
 
 const useLoadPlaid = () => {
     const { accessToken: oktaToken } = useOkta()
@@ -38,35 +39,40 @@ const useLoadPlaid = () => {
         getLinkToken()
     }, [])
 
-    const exchangePublicToken = async (token: string, metadata: any) => {
-        try {
-            const response = await api.exchangePublicToken(token)
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
     const getTransactions = async () => {
         return await api.getTransactions(
             new Date('2020-06-06'),
             new Date('2020-07-07')
         )
     }
-    const onSuccess = useCallback(exchangePublicToken, [])
+
+    const { isLoading, isError, data: transactions, error: rqError } = useQuery<
+        Transactions | undefined,
+        Error
+    >('transactions', getTransactions)
+
+    const onSuccess = useCallback(async (token: string, metadata: any) => {
+        await api.exchangePublicToken(token)
+    }, [])
+
     const config = {
         token: linkResponse?.link_token ?? '',
         onSuccess,
         // ...
     }
-    const { open: openPlaid, ready, error } = usePlaidLink(config)
+    const {
+        open: openPlaid,
+        ready: plaidReady,
+        error: plaidError,
+    } = usePlaidLink(config)
+
     return {
-        loading,
+        loading: loading || isLoading,
         linkToken: linkResponse?.link_token ?? '',
         openPlaid,
-        ready: ready && !!linkResponse?.link_token,
-        error,
-        exchangePublicToken,
-        getTransactions,
+        plaidReady: plaidReady && !!linkResponse?.link_token,
+        plaidError,
+        transactions,
     }
 }
 

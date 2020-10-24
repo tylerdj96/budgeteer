@@ -99,6 +99,7 @@ public class PlaidService : IPlaidService
             .Include(bu => bu.Account)
             .Where(bu => bu.OktaEmail == userEmail)
             .FirstOrDefault();
+        if (user == null) throw new Exception();
         var body = new Dictionary<string, object>();
         body["client_id"] = _plaidSettings.ClientId;
         body["secret"] = _plaidSettings.ClientSecret;
